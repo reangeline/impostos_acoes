@@ -76,7 +76,7 @@ Exemplo com entrada de um arquivo:
 
 1. **Execute os testes com o comando:**
     ```bash
-    go ./test/...
+    go test ./test/...
     ```
 
 2. **Verifique os resultados no terminal.**
