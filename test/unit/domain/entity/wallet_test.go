@@ -1,6 +1,7 @@
 package entity_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/reangeline/impostos_acoes/internal/domain/entity"
@@ -8,312 +9,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWallet_ProcessBooks(t *testing.T) {
+func TestNewWallet(t *testing.T) {
+	wallet := entity.NewWallet()
 
-	t.Run("should process case 1", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  100,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  15.00,
-				Quantity:  50,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  15.00,
-				Quantity:  50,
-			},
-		}
+	assert.NotNil(t, wallet)
+	assert.Equal(t, 0, wallet.CurrentQuantity)
+	assert.Equal(t, 0.00, wallet.WeightedAverage)
+	assert.Equal(t, 0.00, wallet.Results)
+}
 
-		taxes, err := wallet.ProcessBooks(book)
+func TestProcessBuy(t *testing.T) {
+	wallet := entity.NewWallet()
 
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
+	wallet.ProcessBuy(10, 100.00)
+	assert.Equal(t, 10, wallet.CurrentQuantity)
+	assert.Equal(t, 100.00, wallet.WeightedAverage)
 
-		expectedTaxes := []float64{0.00, 0.00, 0.00}
+	wallet.ProcessBuy(5, 200.00)
+	assert.Equal(t, 15, wallet.CurrentQuantity)
+	assert.Equal(t, 133.33333333333334, wallet.WeightedAverage)
+}
 
-		assert.Equal(t, expectedTaxes, taxes)
+func TestProcessSell(t *testing.T) {
+	wallet := entity.NewWallet()
+	wallet.ProcessBuy(10, 100.00)
 
-	})
+	fmt.Println(wallet.WeightedAverage)
 
-	t.Run("should process case 2", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  20.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  5.00,
-				Quantity:  5000,
-			},
-		}
+	grossProfit, err := wallet.ProcessSell(5, 150.00)
+	assert.Nil(t, err)
 
-		taxes, err := wallet.ProcessBooks(book)
+	assert.Equal(t, 250.00, grossProfit)
 
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 10000.00, 0.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
-	t.Run("should process case 3", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  5.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  20.00,
-				Quantity:  3000,
-			},
-		}
-
-		taxes, err := wallet.ProcessBooks(book)
-
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 0.00, 1000.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
-	t.Run("should process case 4", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "buy",
-				UnitCost:  25.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  15.00,
-				Quantity:  10000,
-			},
-		}
-
-		taxes, err := wallet.ProcessBooks(book)
-
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 0.00, 0.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
-	t.Run("should process case 5", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "buy",
-				UnitCost:  25.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  15.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  25.00,
-				Quantity:  5000,
-			},
-		}
-
-		taxes, err := wallet.ProcessBooks(book)
-
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 0.00, 0.00, 10000.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
-	t.Run("should process case 6", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  2.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  20.00,
-				Quantity:  2000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  20.00,
-				Quantity:  2000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  25.00,
-				Quantity:  1000,
-			},
-		}
-
-		taxes, err := wallet.ProcessBooks(book)
-
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 0.00, 0.00, 0.00, 3000.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
-	t.Run("should process case 7", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  2.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  20.00,
-				Quantity:  2000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  20.00,
-				Quantity:  2000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  25.00,
-				Quantity:  1000,
-			},
-			{
-				Operation: "buy",
-				UnitCost:  20.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  15.00,
-				Quantity:  5000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  30.00,
-				Quantity:  4350,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  30.00,
-				Quantity:  650,
-			},
-		}
-
-		taxes, err := wallet.ProcessBooks(book)
-
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 0.00, 0.00, 0.00, 3000.00, 0.00, 0.00, 3700.00, 0.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
-	t.Run("should process case 8", func(t *testing.T) {
-		wallet := entity.Wallet{}
-		book := []*entity.Book{
-			{
-				Operation: "buy",
-				UnitCost:  10.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  50.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "buy",
-				UnitCost:  20.00,
-				Quantity:  10000,
-			},
-			{
-				Operation: "sell",
-				UnitCost:  50.00,
-				Quantity:  10000,
-			},
-		}
-
-		taxes, err := wallet.ProcessBooks(book)
-
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-
-		expectedTaxes := []float64{0.00, 80000.00, 0.00, 60000.00}
-
-		assert.Equal(t, expectedTaxes, taxes)
-
-	})
-
+	assert.Equal(t, 5, wallet.CurrentQuantity)
+	assert.Equal(t, 100.00, wallet.WeightedAverage)
 }
